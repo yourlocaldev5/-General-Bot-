@@ -83,7 +83,7 @@ export const botConfig = {
     deleteApprovedAfter: 30, 
 
     // Role IDs allowed to manage applications.
-    managerRoles: [], // Will be populated from environment or database
+    managerRoles: [1490147997269627080], [1490147997282078896], // Will be populated from environment or database
   },
 
   // =========================
@@ -206,10 +206,10 @@ export const botConfig = {
   // =========================
   tickets: {
     // Category ID where new tickets are created (null = no forced category).
-    defaultCategory: null,
+    defaultCategory: [1490148000557826132],
 
     // Role IDs allowed to manage/support tickets.
-    supportRoles: [],
+    supportRoles: [1490147997244330118],
 
     // Priority options users/staff can assign.
     priorities: {
@@ -247,7 +247,7 @@ export const botConfig = {
     archiveCategory: null,
 
     // Channel ID where ticket logs are sent.
-    logChannel: null,
+    logChannel: [1490148000247582800],
   },
 
   // =========================
@@ -269,7 +269,7 @@ export const botConfig = {
     maximumDuration: 2592000000, 
 
     // Role IDs allowed to host giveaways.
-    allowedRoles: [],
+    allowedRoles: [1490147997294530692],
 
     // Role IDs that bypass giveaway restrictions.
     bypassRoles: [],
@@ -370,9 +370,9 @@ export const botConfig = {
     defaultGoodbyeMessage:
       "{user} has left the server. We now have {memberCount} members.",
     // Channel ID for welcome messages.
-    defaultWelcomeChannel: 1490147997835591889,
+    defaultWelcomeChannel: [1490147997835591889],
     // Channel ID for goodbye messages.
-    defaultGoodbyeChannel: 1490147997835591889,
+    defaultGoodbyeChannel: [1490147997835591889],
   },
 
   // =========================
