@@ -5,12 +5,10 @@ import {
   ButtonStyle,
   EmbedBuilder,
   PermissionFlagsBits,
-  StringSelectMenuBuilder,
-  StringSelectMenuOptionBuilder,
   AttachmentBuilder,
 } from 'discord.js';
 import { getGuildConfig } from './guildConfig.js';
-import { getTicketData, saveTicketData, deleteTicketData, getOpenTicketCountForUser } from '../utils/database.js';
+import { getTicketData, saveTicketData, deleteTicketData, getOpenTicketCountForUser, incrementTicketCounter } from '../utils/database.js';
 import { logger } from '../utils/logger.js';
 import { createEmbed, errorEmbed } from '../utils/embeds.js';
 import { logTicketEvent } from '../utils/ticketLogging.js';
@@ -46,8 +44,6 @@ function getPriorityMap() {
 const PRIORITY_MAP = getPriorityMap();
 const TICKET_DELETE_DELAY_MS = 3000;
 const TICKET_DELETE_DELAY_SECONDS = Math.floor(TICKET_DELETE_DELAY_MS / 1000);
-const TICKET_NUMBER_BASE = 100;
-const TICKET_NUMBER_RANGE = 900;
 
 
 
@@ -318,20 +314,24 @@ export async function closeTicket(channel, closer, reason = 'No reason provided'
               footer: { text: 'Your feedback helps us improve.' },
             });
 
-            const feedbackSelect = new StringSelectMenuBuilder()
-              .setCustomId(`ticket_feedback:${channel.guild.id}:${channel.id}`)
-              .setPlaceholder('Select a rating...')
-              .addOptions(
-                new StringSelectMenuOptionBuilder().setLabel('⭐ 1 — Poor').setValue('1').setDescription('The support was unhelpful or slow.'),
-                new StringSelectMenuOptionBuilder().setLabel('⭐⭐ 2 — Below Average').setValue('2').setDescription('There was room for improvement.'),
-                new StringSelectMenuOptionBuilder().setLabel('⭐⭐⭐ 3 — Average').setValue('3').setDescription('Support was okay.'),
-                new StringSelectMenuOptionBuilder().setLabel('⭐⭐⭐⭐ 4 — Good').setValue('4').setDescription('Support was helpful and friendly.'),
-                new StringSelectMenuOptionBuilder().setLabel('⭐⭐⭐⭐⭐ 5 — Excellent').setValue('5').setDescription('Outstanding support experience!'),
-              );
+            const base = `ticket_feedback:${channel.guild.id}:${channel.id}`;
+            const starsRow = new ActionRowBuilder().addComponents(
+              new ButtonBuilder().setCustomId(`${base}:1`).setLabel('⭐ 1').setStyle(ButtonStyle.Secondary),
+              new ButtonBuilder().setCustomId(`${base}:2`).setLabel('⭐⭐ 2').setStyle(ButtonStyle.Secondary),
+              new ButtonBuilder().setCustomId(`${base}:3`).setLabel('⭐⭐⭐ 3').setStyle(ButtonStyle.Secondary),
+              new ButtonBuilder().setCustomId(`${base}:4`).setLabel('⭐⭐⭐⭐ 4').setStyle(ButtonStyle.Secondary),
+              new ButtonBuilder().setCustomId(`${base}:5`).setLabel('⭐⭐⭐⭐⭐ 5').setStyle(ButtonStyle.Secondary),
+            );
+            const declineRow = new ActionRowBuilder().addComponents(
+              new ButtonBuilder()
+                .setCustomId(`ticket_feedback_decline:${channel.guild.id}:${channel.id}`)
+                .setLabel('❌ No thanks')
+                .setStyle(ButtonStyle.Secondary),
+            );
 
             await ticketCreator.send({
               embeds: [feedbackEmbed],
-              components: [new ActionRowBuilder().addComponents(feedbackSelect)],
+              components: [starsRow, declineRow],
             });
           } catch (feedbackError) {
             logger.warn(`Could not send feedback survey to ticket creator ${ticketData.userId}: ${feedbackError.message}`);
@@ -1134,8 +1134,7 @@ export async function unclaimTicket(channel, unclaimer) {
 }
 
 async function getNextTicketNumber(guildId) {
-  const randomTicket = Math.floor(Math.random() * TICKET_NUMBER_RANGE) + TICKET_NUMBER_BASE;
-  return randomTicket.toString();
+  return await incrementTicketCounter(guildId);
 }
 
 export async function updateTicketPriority(channel, priority, updater) {
