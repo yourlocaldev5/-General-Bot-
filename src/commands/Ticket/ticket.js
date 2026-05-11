@@ -5,10 +5,12 @@ import { getGuildConfig } from '../../services/guildConfig.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
 import { logger } from '../../utils/logger.js';
 import { handleInteractionError } from '../../utils/errorHandler.js';
+import { buildTicketPanel } from '../../utils/ticketPanel.js';
 
 import ticketConfig from './modules/ticket_dashboard.js';
 
 export default {
+    tier: 'admin',
     data: new SlashCommandBuilder()
         .setName("ticket")
         .setDescription("Manages the server's ticket system.")
@@ -152,25 +154,10 @@ const panelMessage = interaction.options.getString("panel_message") || "Click th
             const maxTicketsPerUser = interaction.options.getInteger("max_tickets_per_user") || 3;
 const dmOnClose = interaction.options.getBoolean("dm_on_close") !== false;
 
-            const setupEmbed = createEmbed({ 
-                title: "🎫 Support Tickets", 
-description: panelMessage,
-                color: getColor('info')
-            });
-
-            const ticketButton = new ActionRowBuilder().addComponents(
-                new ButtonBuilder()
-                    .setCustomId("create_ticket")
-.setLabel(buttonLabel)
-                    .setStyle(ButtonStyle.Primary)
-                    .setEmoji("📩"),
-            );
+            const panel = buildTicketPanel({ description: panelMessage });
 
             try {
-                await panelChannel.send({
-                    embeds: [setupEmbed],
-                    components: [ticketButton],
-                });
+                await panelChannel.send(panel);
 
                 if (client.db && interaction.guildId) {
                     const currentConfig = existingConfig;
