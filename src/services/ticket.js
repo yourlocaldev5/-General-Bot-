@@ -69,7 +69,8 @@ export async function getUserTicketCount(guildId, userId) {
   }
 }
 
-export async function createTicket(guild, member, categoryId, reason = 'No reason provided', priority = 'none') {
+export async function createTicket(guild, member, categoryId, reason = 'No reason provided', priority = 'none', options = {}) {
+  const { extraRoleId = null, categoryLabel = null } = options || {};
   try {
     const config = await getGuildConfig(guild.client, guild.id);
     const ticketConfig = config.tickets || {};
@@ -142,6 +143,15 @@ export async function createTicket(guild, member, categoryId, reason = 'No reaso
             PermissionFlagsBits.ReadMessageHistory,
           ],
         }] : []),
+        ...(extraRoleId && extraRoleId !== config.ticketStaffRoleId ? [{
+          id: extraRoleId,
+          allow: [
+            PermissionFlagsBits.ViewChannel,
+            PermissionFlagsBits.SendMessages,
+            PermissionFlagsBits.AttachFiles,
+            PermissionFlagsBits.ReadMessageHistory,
+          ],
+        }] : []),
       ],
     });
     
@@ -162,7 +172,7 @@ export async function createTicket(guild, member, categoryId, reason = 'No reaso
     
     const embed = createEmbed({
       title: `Ticket #${ticketNumber}`,
-      description: `${member.toString()}, thanks for creating a ticket!\n\n**Reason:** ${reason}\n**Priority:** ${priorityInfo.emoji} ${priorityInfo.label}`,
+      description: `${member.toString()}, thanks for creating a ticket!\n\n${categoryLabel ? `**Category:** ${categoryLabel}\n` : ''}**Reason:** ${reason}\n**Priority:** ${priorityInfo.emoji} ${priorityInfo.label}`,
       color: priorityInfo.color,
       fields: [
         { name: 'Status', value: '🟢 Open', inline: true },
@@ -204,8 +214,10 @@ export async function createTicket(guild, member, categoryId, reason = 'No reaso
       );
     }
     
-    const staffMention = config.ticketStaffRoleId ? ` <@&${config.ticketStaffRoleId}>` : '';
-    const messageContent = `${member.toString()}${staffMention}`;
+    const mentions = [];
+    if (config.ticketStaffRoleId) mentions.push(`<@&${config.ticketStaffRoleId}>`);
+    if (extraRoleId && extraRoleId !== config.ticketStaffRoleId) mentions.push(`<@&${extraRoleId}>`);
+    const messageContent = `${member.toString()}${mentions.length ? ' ' + mentions.join(' ') : ''}`;
     
     const ticketMessage = await channel.send({ 
       content: messageContent,
